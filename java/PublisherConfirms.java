@@ -22,23 +22,32 @@ public class PublisherConfirms {
     }
 
     public static void main(String[] args) throws Exception {
+        //策略1：分别发布消息
         publishMessagesIndividually();
+        //策略2：批量发布消息
         publishMessagesInBatch();
+        //策略3：处理发布者异步确认
         handlePublishConfirmsAsynchronously();
     }
 
     static void publishMessagesIndividually() throws Exception {
+         //连接服务器
         try (Connection connection = createConnection()) {
             Channel ch = connection.createChannel();
 
             String queue = UUID.randomUUID().toString();
+            //订阅
             ch.queueDeclare(queue, false, false, true, null);
 
+            //发布者确认在通道级别使用confirmSelect方法启用
             ch.confirmSelect();
             long start = System.nanoTime();
             for (int i = 0; i < MESSAGE_COUNT; i++) {
                 String body = String.valueOf(i);
+                
+                //策略1：分别发布消息
                 ch.basicPublish("", queue, null, body.getBytes());
+                //channel.basicPublish（交换，队列，属性，主体）; //使用5秒超时 
                 ch.waitForConfirmsOrDie(5_000);
             }
             long end = System.nanoTime();
