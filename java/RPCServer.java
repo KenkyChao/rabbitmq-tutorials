@@ -27,7 +27,7 @@ public class RPCServer {
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                 AMQP.BasicProperties replyProps = new AMQP.BasicProperties
                         .Builder()
-                        .correlationId(delivery.getProperties().getCorrelationId())
+                        .correlationId(delivery.getProperties().getCorrelationId())  //设置为每个请求的唯一值
                         .build();
 
                 String response = "";
@@ -41,6 +41,7 @@ public class RPCServer {
                 } catch (RuntimeException e) {
                     System.out.println(" [.] " + e.toString());
                 } finally {
+                    //回调队列
                     channel.basicPublish("", delivery.getProperties().getReplyTo(), replyProps, response.getBytes("UTF-8"));
                     channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                     // RabbitMq consumer worker thread notifies the RPC server owner thread
@@ -50,6 +51,7 @@ public class RPCServer {
                 }
             };
 
+            //使用basicConsume访问队列
             channel.basicConsume(RPC_QUEUE_NAME, false, deliverCallback, (consumerTag -> { }));
             // Wait and be prepared to consume the message from RPC client.
             while (true) {
