@@ -24,6 +24,7 @@ public class RPCClient implements AutoCloseable {
     }
 
     public static void main(String[] argv) {
+        //发起客户请求
         try (RPCClient fibonacciRpc = new RPCClient()) {
             for (int i = 0; i < 32; i++) {
                 String i_str = Integer.toString(i);
@@ -42,14 +43,15 @@ public class RPCClient implements AutoCloseable {
         String replyQueueName = channel.queueDeclare().getQueue();
         AMQP.BasicProperties props = new AMQP.BasicProperties
                 .Builder()
-                .correlationId(corrId)
-                .replyTo(replyQueueName)
+                .correlationId(corrId)//唯一值
+                .replyTo(replyQueueName) //通常用于命名回调队列。
                 .build();
 
         channel.basicPublish("", requestQueueName, props, message.getBytes("UTF-8"));
 
         final BlockingQueue<String> response = new ArrayBlockingQueue<>(1);
 
+        //我们使用basicConsume访问队列，在队列中我们以对象（DeliverCallback）的形式提供回调，该回调将完成工作并将响应发送回去。
         String ctag = channel.basicConsume(replyQueueName, true, (consumerTag, delivery) -> {
             if (delivery.getProperties().getCorrelationId().equals(corrId)) {
                 response.offer(new String(delivery.getBody(), "UTF-8"));
