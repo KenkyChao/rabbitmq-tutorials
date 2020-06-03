@@ -12,12 +12,12 @@ public class EmitLogTopic {
         factory.setHost("localhost");
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
-
+            //创建topic类型的交换
             channel.exchangeDeclare(EXCHANGE_NAME, "topic");
 
             String routingKey = getRouting(argv);
             String message = getMessage(argv);
-
+            //发布消息
             channel.basicPublish(EXCHANGE_NAME, routingKey, null, message.getBytes("UTF-8"));
             System.out.println(" [x] Sent '" + routingKey + "':'" + message + "'");
         }
