@@ -47,7 +47,7 @@ public class PublisherConfirms {
                 
                 //策略1：分别发布消息
                 ch.basicPublish("", queue, null, body.getBytes());
-                //channel.basicPublish（交换，队列，属性，主体）; //使用5秒超时 
+                //channel.basicPublish（交换，队列，属性，主体）; //异步通知的同步帮助器，使用5秒超时 
                 ch.waitForConfirmsOrDie(5_000);
             }
             long end = System.nanoTime();
@@ -108,8 +108,9 @@ public class PublisherConfirms {
                     outstandingConfirms.remove(sequenceNumber);
                 }
             };
-
+            
             ch.addConfirmListener(cleanOutstandingConfirms, (sequenceNumber, multiple) -> {
+                //确认消息时的代码 
                 String body = outstandingConfirms.get(sequenceNumber);
                 System.err.format(
                         "Message with body %s has been nack-ed. Sequence number: %d, multiple: %b%n",
@@ -121,6 +122,7 @@ public class PublisherConfirms {
             long start = System.nanoTime();
             for (int i = 0; i < MESSAGE_COUNT; i++) {
                 String body = String.valueOf(i);
+                // ...确认回调的代码将在以后出现 
                 outstandingConfirms.put(ch.getNextPublishSeqNo(), body);
                 ch.basicPublish("", queue, null, body.getBytes());
             }
